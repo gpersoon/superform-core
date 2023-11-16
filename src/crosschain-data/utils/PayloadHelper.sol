@@ -28,9 +28,15 @@ import { ProofLib } from "../../libraries/ProofLib.sol";
 contract PayloadHelper is IPayloadHelper {
     using DataLib for uint256;
 
-    /*///////////////////////////////////////////////////////////////
-                                STRUCTS
-    //////////////////////////////////////////////////////////////*/
+    //////////////////////////////////////////////////////////////
+    //                         CONSTANTS                        //
+    //////////////////////////////////////////////////////////////
+
+    ISuperRegistry public immutable superRegistry;
+
+    //////////////////////////////////////////////////////////////
+    //                           STRUCTS                        //
+    //////////////////////////////////////////////////////////////
 
     struct DecodeDstPayloadInternalVars {
         uint8 txType;
@@ -65,23 +71,17 @@ contract PayloadHelper is IPayloadHelper {
         uint256 i;
     }
 
-    /*///////////////////////////////////////////////////////////////
-                            STATE VARIABLES
-    //////////////////////////////////////////////////////////////*/
-
-    ISuperRegistry public immutable superRegistry;
-
-    /*///////////////////////////////////////////////////////////////
-                            CONSTRUCTOR
-    //////////////////////////////////////////////////////////////*/
+    //////////////////////////////////////////////////////////////
+    //                      CONSTRUCTOR                         //
+    //////////////////////////////////////////////////////////////
 
     constructor(address superRegistry_) {
         superRegistry = ISuperRegistry(superRegistry_);
     }
 
-    /*///////////////////////////////////////////////////////////////
-                            EXTERNAL FUNCTIONS
-    //////////////////////////////////////////////////////////////*/
+    //////////////////////////////////////////////////////////////
+    //              EXTERNAL VIEW FUNCTIONS                     //
+    //////////////////////////////////////////////////////////////
 
     /// @inheritdoc IPayloadHelper
     function decodeCoreStateRegistryPayload(uint256 dstPayloadId_)
@@ -239,9 +239,9 @@ contract PayloadHelper is IPayloadHelper {
         srcChainId = srcChainId_;
     }
 
-    /*///////////////////////////////////////////////////////////////
-                        INTERNAL HELPER FUNCTIONS
-    //////////////////////////////////////////////////////////////*/
+    //////////////////////////////////////////////////////////////
+    //                  INTERNAL FUNCTIONS                      //
+    //////////////////////////////////////////////////////////////
 
     function _isValidPayloadId(uint256 payloadId_, IBaseStateRegistry stateRegistry) internal view {
         if (payloadId_ > stateRegistry.payloadsCount()) {
@@ -263,7 +263,6 @@ contract PayloadHelper is IPayloadHelper {
     {
         (txType, callbackType, multi,, srcSender, srcChainId) =
             coreStateRegistry_.payloadHeader(dstPayloadId_).decodeTxInfo();
-        return (txType, callbackType, multi, srcSender, srcChainId);
     }
 
     function _decodeReturnData(
@@ -369,8 +368,13 @@ contract PayloadHelper is IPayloadHelper {
             txDatas[i] = imvd.liqData[i].txData;
             tokens[i] = imvd.liqData[i].token;
             liqDstChainIds[i] = imvd.liqData[i].liqDstChainId;
-            amountsIn[i] =
-                IBridgeValidator(superRegistry.getBridgeValidator(bridgeIds[i])).decodeAmountIn(txDatas[i], false);
+
+            /// @dev decodes amount from txdata only if its present
+            if (imvd.liqData[i].txData.length > 0) {
+                amountsIn[i] =
+                    IBridgeValidator(superRegistry.getBridgeValidator(bridgeIds[i])).decodeAmountIn(txDatas[i], false);
+            }
+
             nativeAmounts[i] = imvd.liqData[i].nativeAmount;
             unchecked {
                 ++i;
@@ -411,8 +415,12 @@ contract PayloadHelper is IPayloadHelper {
         liqDstChainIds[0] = isvd.liqData.liqDstChainId;
 
         amountsIn = new uint256[](1);
-        amountsIn[0] =
-            IBridgeValidator(superRegistry.getBridgeValidator(bridgeIds[0])).decodeAmountIn(txDatas[0], false);
+
+        /// @dev decodes amount from txdata only if its present
+        if (isvd.liqData.txData.length > 0) {
+            amountsIn[0] =
+                IBridgeValidator(superRegistry.getBridgeValidator(bridgeIds[0])).decodeAmountIn(txDatas[0], false);
+        }
 
         nativeAmounts = new uint256[](1);
         nativeAmounts[0] = isvd.liqData.nativeAmount;
