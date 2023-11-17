@@ -114,7 +114,9 @@ abstract contract AbstractDeploySingle is Script {
         "EmergencyQueue"
     ];
 
-    bytes32 constant salt = "FOURTH_DEPLOYMENT_POST_GERARD";
+    /// @dev original deployment salt
+    //bytes32 constant salt = "FOURTH_DEPLOYMENT_POST_GERARD";
+    bytes32 constant salt = "FOURTH_DEPLOYMENT_POST_GERARD_PH";
 
     enum Chains {
         Ethereum,
